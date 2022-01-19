@@ -323,7 +323,7 @@ class Outliner:
                         s += f'    │  {txt}'
                     s += f'    └  {source[-1]}\n'
                 else:
-                    s += f'    │ {source[0]}\n'
+                    s += f'    | {source[0]}\n'
         
             if isinstance(cell, CodeCell) == True:
                 s += f'└─▶ Code cell #{cell.id} ({cell.execution_count})\n'
@@ -334,8 +334,8 @@ class Outliner:
                         s += f'    │  {txt}\n'
                     s += f'    └  {source[-1]}\n'
                 else:
-                    s += f'    │ {source[0]}\n'
-        return(s)
+                    s += f'    | {source[0]}\n'
+        return(s[:-1])  # on enlève le dernier saut de ligne
         
 
 nb = Notebook.from_file("samples/hello-world.ipynb") 
