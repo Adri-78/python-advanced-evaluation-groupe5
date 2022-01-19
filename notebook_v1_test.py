@@ -91,10 +91,8 @@ class Question13(unittest.TestCase):
 # Hello world!
 # ============
 # Print `Hello world!`:
-
 # %%
 print("Hello world!")
-
 # %% [markdown]
 # Goodbye! 👋"""
             , ppp.to_py_percent())

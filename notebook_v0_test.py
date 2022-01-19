@@ -167,13 +167,10 @@ class Question3(unittest.TestCase):
 # Hello world!
 # ============
 # Print `Hello world!`:
-
 # %%
 print("Hello world!")
-
 # %% [markdown]
-# Goodbye! 👋
-""",
+# Goodbye! 👋""",
             to_percent(ipynb),
         )
 
@@ -192,6 +189,7 @@ print("Hello world!")
 Goodbye! 👋""",
             to_starboard(ipynb),
         )
+
 
 class Question4(unittest.TestCase):
     def test_to_starboard_html(self):

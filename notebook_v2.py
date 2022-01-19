@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from pyclbr import Class
+from select import kevent
+import notebook_v0 as toolbox
+import notebook_v1 as toolbox2
 
 """
 an object-oriented version of the notebook toolbox
@@ -30,7 +34,11 @@ class CodeCell:
         ['print("Hello world!")']
     """
     def __init__(self, id, source, execution_count):
-        pass
+        self.id = id
+        self.source = source
+        self.execution_count = execution_count
+
+code_cell = CodeCell("b777420a", ['print("Hello world!")'], 1)
 
 class MarkdownCell:
     r"""A Cell of Markdown markup in a Jupyter notebook.
@@ -56,7 +64,10 @@ class MarkdownCell:
         ['Hello world!', '============', 'Print `Hello world!`:']
     """
     def __init__(self, id, source):
-        super().__init__(id, source)
+        self.id = id
+        self.source = source
+
+markdown_cell = MarkdownCell("a9541506", ["Hello world!", "============", "Print `Hello world!`:"])
 
 class Notebook:
     r"""A Jupyter Notebook
@@ -92,12 +103,18 @@ class Notebook:
     """
 
     def __init__(self, version, cells):
-        pass
+        self.version = version
+        self.cells = cells
     
     def __iter__(self):
         r"""Iterate the cells of the notebook.
         """
-        pass
+        return iter(self.cells)
+        
+version = "4.5"
+cells = [MarkdownCell("a9541506", ["Hello world!", "============", "Print `Hello world!`:"]), 
+CodeCell("b777420a", ['print("Hello world!")'], 1)]
+nb = Notebook(version, cells)
 
 class NotebookLoader:
     r"""Loads a Jupyter Notebook from a file
@@ -117,12 +134,26 @@ class NotebookLoader:
             a23ab5ac
     """
     def __init__(self, filename):
-        pass
+        self.filename = filename
 
     def load(self):
         r"""Loads a Notebook instance from the file.
         """
-        pass
+        file = toolbox.load_ipynb(self.filename)
+        format = toolbox.get_format_version(file)
+        cell1 = []
+        for cell in file['cells']:
+            if cell['cell_type'] == 'markdown':
+                cell1.append(MarkdownCell(cell['id'], cell['source']))  # on doit donc créer les cellules en fonction des classses que l'on vient de créer
+            if cell['cell_type'] == 'code':
+                cell1.append(CodeCell(cell['id'], cell['source'], cell['execution_count']))
+        return Notebook(format, cell1)
+
+nbl = NotebookLoader("samples/hello-world.ipynb")
+nb = nbl.load()
+#print(nb.version)
+#for cell in nb:
+#    print (cell.id)
 
 class Markdownizer:
     r"""Transforms a notebook to a pure markdown notebook.
@@ -147,12 +178,24 @@ class Markdownizer:
     """
 
     def __init__(self, notebook):
-        pass
+        self.notebook = notebook
 
     def markdownize(self):
         r"""Transforms the notebook to a pure markdown notebook.
         """
-        pass
+
+        for k in range(len(self.notebook.cells)-1):
+            if isinstance(self.notebook.cells[k], CodeCell) == True:
+
+                cell_1 = self.notebook.cells[k]
+                self.notebook.cells[k] = MarkdownCell(cell_1.id, cell_1.source) # c'est ici qu'on change la classe en MarkDown
+
+        return self.notebook
+
+
+nb = NotebookLoader("samples/hello-world.ipynb").load()
+nb2 = Markdownizer(nb).markdownize()
+#print(isinstance(nb2.cells[1], MarkdownCell))
 
 class MarkdownLesser:
     r"""Removes markdown cells from a notebook.
@@ -170,7 +213,7 @@ class MarkdownLesser:
                 | print("Hello world!")
     """
     def __init__(self, notebook):
-        pass
+        self.notebook = notebook
 
     def remove_markdown_cells(self):
         r"""Removes markdown cells from the notebook.
@@ -178,7 +221,15 @@ class MarkdownLesser:
         Returns:
             Notebook: a Notebook instance with only code cells
         """
-        pass
+        for k in range(len(self.notebook.cells)-1):
+            if isinstance(self.notebook.cells[k], MarkdownCell) == True:
+                self.notebook.cells.pop(k)
+
+        return self.notebook
+
+nb = NotebookLoader("samples/hello-world.ipynb").load()
+nb2 = MarkdownLesser(nb).remove_markdown_cells()
+#print(toolbox2.Outliner(nb2).outline())
 
 class PyPercentLoader:
     r"""Loads a Jupyter Notebook from a py-percent file.
@@ -204,9 +255,20 @@ class PyPercentLoader:
     """
 
     def __init__(self, filename, version="4.5"):
-        pass
+        self.filename = filename
+        self.version = version
 
     def load(self):
         r"""Loads a Notebook instance from the py-percent file.
         """
-        pass
+        file = open(self.filename, 'r')
+        lines = file.readlines()        # on lit le fichier ligne par ligne
+        file.close()
+
+        return(lines)
+
+nb = NotebookLoader("samples/hello-world.ipynb").load()
+toolbox2.PyPercentSerializer(nb).to_file("samples/hello-world-py-percent.ipynb")  # le fichier reste vide...
+nb2 = PyPercentLoader("samples/hello-world-py-percent.py").load()
+print(nb2)
+

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import notebook_v0 as toolbox
 
 """
 an object-oriented version of the notebook toolbox
@@ -33,7 +34,13 @@ class CodeCell:
     """
 
     def __init__(self, ipynb):
-        pass
+        self.ipynb = ipynb
+        self.cell_type = ipynb["cell_type"]
+        self.execution_count = ipynb["execution_count"]
+        self.id = ipynb["id"]
+        self.source = ipynb['source']
+
+code_cell = CodeCell({"cell_type": "code", "execution_count": 1, "id": "b777420a", 'source': ['print("Hello world!")']})
 
 class MarkdownCell:
     r"""A Cell of Markdown markup in a Jupyter notebook.
@@ -63,7 +70,11 @@ class MarkdownCell:
     """
 
     def __init__(self, ipynb):
-        pass
+        self.ipynb = ipynb
+        self.id = ipynb["id"]
+        self.source = ipynb['source']
+
+markdown_cell = MarkdownCell({"cell_type": "markdown", "id": "a9541506", 'source': ["Hello world!\n", "============\n", "Print `Hello world!`:"]})
 
 class Notebook:
     r"""A Jupyter Notebook.
@@ -95,7 +106,16 @@ class Notebook:
     """
 
     def __init__(self, ipynb):
-        pass
+        self.ipynb = ipynb
+        self.version = f"{ipynb['nbformat']}.{ipynb['nbformat_minor']}"
+        self.cells = []
+        for i in ipynb['cells']:
+            if i['cell_type']=='markdown':
+                self.cells.append(MarkdownCell(i)) # on attribue directement la classe à la cellule
+                                                   # afin de pouvoir print 'id' dans la fonction iter
+            if i['cell_type']=='code':
+                self.cells.append(CodeCell(i))
+
 
     @staticmethod
     def from_file(filename):
@@ -107,7 +127,8 @@ class Notebook:
             >>> nb.version
             '4.5'
         """
-        pass
+        filename2 = toolbox.load_ipynb(filename)
+        return (Notebook(filename2))
 
     def __iter__(self):
         r"""Iterate the cells of the notebook.
@@ -122,6 +143,9 @@ class Notebook:
             a23ab5ac
         """
         return iter(self.cells)
+
+nb = Notebook.from_file("samples/hello-world.ipynb")
+#print(nb.version)
 
 class PyPercentSerializer:
     r"""Prints a given Notebook in py-percent format.
@@ -145,12 +169,25 @@ class PyPercentSerializer:
             # Goodbye! 👋
     """
     def __init__(self, notebook):
-        pass
+        self.notebook = notebook
 
     def to_py_percent(self):
         r"""Converts the notebook to a string in py-percent format.
         """
-        pass
+        s = ""
+        for cell in self.notebook:  
+            if isinstance(cell, MarkdownCell) == True:  # on a adapté la fonction du notebook v0
+                                                        # pour tenir compte des classes
+                s += "# %% [markdown]\n"
+                for source in cell.source:
+                    s += f"# {source}"
+            if isinstance(cell, CodeCell) == True:
+                s += "\n"
+                s += "# %%\n"
+                for source in cell.source:
+                    s += f"{source}"
+                s += "\n"
+        return s
 
     def to_file(self, filename):
         r"""Serializes the notebook to a file
@@ -164,7 +201,14 @@ class PyPercentSerializer:
                 >>> s = PyPercentSerializer(nb)
                 >>> s.to_file("samples/hello-world-serialized-py-percent.py")
         """
-        pass
+        f = open(filename, 'w+')
+        f.write(str(self.to_py_percent()))
+
+nb = Notebook.from_file("samples/hello-world.ipynb")
+ppp = PyPercentSerializer(nb)
+#print(ppp.to_py_percent())
+#ppp.to_file("samples/hello-world-serialized-py-percent.py")
+
 class Serializer:
     r"""Serializes a Jupyter Notebook to a file.
 
@@ -199,7 +243,7 @@ class Serializer:
     """
 
     def __init__(self, notebook):
-        pass
+        self.notebook = notebook
 
     def serialize(self):
         r"""Serializes the notebook to a JSON object
@@ -207,7 +251,8 @@ class Serializer:
         Returns:
             dict: a dictionary representing the notebook.
         """
-        pass
+        Nb = self.notebook
+        return (Nb.ipynb)
 
     def to_file(self, filename):
         r"""Serializes the notebook to a file
@@ -227,7 +272,13 @@ class Serializer:
                 b777420a
                 a23ab5ac
         """
-        pass
+        f = open(filename, 'w')
+        f.write(f"{Serializer.serialize(self)}")
+
+#nb = Notebook.from_file("samples/hello-world.ipynb")
+#s = Serializer(nb)
+#print(s.serialize())
+#s.to_file("samples/hello-world-serialized.ipynb")
 
 class Outliner:
     r"""Quickly outlines the strucure of the notebook in a readable format.
@@ -259,4 +310,34 @@ class Outliner:
         Returns:
             str: a string representing the outline of the notebook.
         """
-        pass
+        s = ''
+        s += f'Jupyter Notebook v{self.notebook.version}\n'
+        for cell in self.notebook.cells:
+            if isinstance(cell, MarkdownCell) == True:  # on différencie le type de chaque cellule
+                s += f'└─▶ Markdown cell #{cell.id}\n'
+                source = cell.source
+                if len(source) > 1:                     # on met cette condition pour savoir quelle mise
+                                                        # en page faire
+                    s += f'    ┌  {source[0]}'
+                    for txt in source[1:-1]:
+                        s += f'    │  {txt}'
+                    s += f'    └  {source[-1]}\n'
+                else:
+                    s += f'    │ {source[0]}\n'
+        
+            if isinstance(cell, CodeCell) == True:
+                s += f'└─▶ Code cell #{cell.id} ({cell.execution_count})\n'
+                source = cell.source
+                if len(source) > 1:
+                    s += f'    ┌  {source[0]}\n'
+                    for txt in source[1:-1]:
+                        s += f'    │  {txt}\n'
+                    s += f'    └  {source[-1]}\n'
+                else:
+                    s += f'    │ {source[0]}\n'
+        return(s)
+        
+
+nb = Notebook.from_file("samples/hello-world.ipynb") 
+o = Outliner(nb)
+#print(o.outline())
