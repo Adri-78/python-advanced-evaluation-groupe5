@@ -203,11 +203,12 @@ class PyPercentSerializer:
         """
         f = open(filename, 'w+')
         f.write(str(self.to_py_percent()))
+        f.close()
 
 nb = Notebook.from_file("samples/hello-world.ipynb")
 ppp = PyPercentSerializer(nb)
 #print(ppp.to_py_percent())
-#ppp.to_file("samples/hello-world-serialized-py-percent.py")
+ppp.to_file("samples/hello-world-serialized-py-percent.py")
 
 class Serializer:
     r"""Serializes a Jupyter Notebook to a file.

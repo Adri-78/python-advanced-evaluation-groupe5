@@ -268,7 +268,7 @@ class PyPercentLoader:
         return(lines)
 
 nb = NotebookLoader("samples/hello-world.ipynb").load()
-toolbox2.PyPercentSerializer(nb).to_file("samples/hello-world-py-percent.ipynb")  # le fichier reste vide...
+toolbox2.PyPercentSerializer(nb).to_file("samples/hello-world-py-percent.py")  # le fichier reste vide...
 nb2 = PyPercentLoader("samples/hello-world-py-percent.py").load()
 print(nb2)
 
